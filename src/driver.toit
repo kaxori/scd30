@@ -22,6 +22,7 @@ class Scd30:
   static COMMAND_GET_DATA_READY_ ::= #[0x02, 0x02]
   static COMMAND_READ_MEASUREMENT_ ::= #[0x03, 0x00]
   static COMMAND_SET_CONTINUOUS_AND_PRESSURE_ ::= #[0x00, 0x10]
+  static COMMAND_SET_FORCED_RECALIBRATION_FACTOR_ ::= #[0x52, 0x04]
 
   device_/serial.Device
   pressure_/int := ?
@@ -92,6 +93,19 @@ class Scd30:
       set_pressure_
     else:
       device_.write #[0x01, 0x04]
+
+  /**
+  Activates the forced recalibration factor.
+  */
+  set-forced-recalibration-factor concentration/int:
+    if concentration < 400 or concentration > 2000:
+      throw "wrong concentration value"
+    
+    concentration_bytes := ByteArray 2
+    binary.BIG_ENDIAN.put_int16 concentration_bytes 0 concentration
+    command := COMMAND_SET_FORCED_RECALIBRATION_FACTOR_ + concentration_bytes + #[compute_crc8_ concentration_bytes]
+    device_.write command
+
 
   set_pressure_ -> none:
     // Set continuous mode with the given (or default) air pressure.
